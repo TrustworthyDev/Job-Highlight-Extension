@@ -27,12 +27,35 @@ marking when you click a job).
 
 ### Where hidden cards are stored
 
-Hidden cards are stored automatically in **`chrome.storage.local`** (the extension's local
-JSON store) as records of `{ title, company, country, logo, url, timestamp }` keyed by the
-card's signature — no Export step needed. The popup's **View hidden jobs** button opens a
-dedicated page (`hidden.html`) that lists every hidden card with its logo, title, company,
-and country, with a **Restore** button per card and **Clear all**. (Your viewed-click
-history is stored alongside it under `seenJobs`.)
+Hidden cards are stored automatically as records of
+`{ title, company, country, logo, url, timestamp }` keyed by the card's signature — no
+Export step needed. The popup's **View hidden jobs** button opens a dedicated page
+(`hidden.html`) that lists every hidden card with its logo, title, company, and country,
+with a **Restore** button per card and **Clear all**. (Your viewed-click history is stored
+alongside it.)
+
+By default the data lives in this profile's **`chrome.storage.local`**.
+
+### Sharing across Chrome profiles (optional)
+
+To make **every profile show the same clicked/hidden jobs** (used one profile at a time),
+install the bundled native host — see **[`native-host/README.md`](native-host/README.md)**.
+It stores the state in a single local JSON file (`native-host/shared-state.json`) that all
+profiles read and write through a small Node helper. Flow:
+
+```
+content.js ──► background.js ──(native messaging)──► host.js ──► shared-state.json
+```
+
+A profile loads the file when a page opens, and on each click/hide it sends **only that
+change** (a delta op) to the host, which **merges** it into the file. So profiles never
+overwrite each other — every profile's clicks/hides accumulate in the one file, and a
+restore/clear removes only the specific item. If the host isn't installed, the extension
+falls back to per-profile `chrome.storage.local`.
+
+A long-open profile also stays in sync: it re-reads the shared file **every minute** (a
+background alarm) and **immediately when you switch back to its window/tab**, so it picks up
+what other profiles changed without needing a reload.
 
 ## Install (unpacked)
 
@@ -85,7 +108,8 @@ interfere with existing tags.
 | `content.js`    | Hide button + hidden/seen storage, viewed tint, highlighter. |
 | `content.css`   | Hide/tint rules and floating-button styling.                |
 | `hidden.html/css/js` | The "Hidden jobs" page: logo + title + company + country, restore / clear all. |
-| `background.js` | Seeds `defaults.json` into storage on install.               |
+| `background.js` | Seeds defaults on install; bridges the page to the native host (shared state). |
+| `native-host/`  | Optional Node host + installer for sharing state across profiles via one JSON file. |
 | `defaults.json` | Default keyword groups shipped with the extension.           |
 | `popup.html/css/js` | Toolbar UI: toggles, keyword manager, View-hidden-jobs button, export/import. |
 | `icons/`        | Extension icons.                                              |

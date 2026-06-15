@@ -17,7 +17,7 @@
       "128": "icons/icon128.png"
     }
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "nativeMessaging", "alarms"],
   "background": {
     "service_worker": "background.js"
   },

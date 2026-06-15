@@ -258,3 +258,33 @@ input:checked + .slider::before {
   font-size: 13px;
   padding: 8px 10px;
 }
+
+/* ---- profile sync ---- */
+.sync {
+  margin-top: 10px;
+}
+.pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 1px 9px;
+  border-radius: 999px;
+}
+.pill-on {
+  background: #1f6f3f;
+  color: #d6f5e2;
+}
+.pill-off {
+  background: #5a3a3a;
+  color: #f3d6d6;
+}
+.hint {
+  margin: 8px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.hint code {
+  background: var(--panel);
+  padding: 0 4px;
+  border-radius: 3px;
+}

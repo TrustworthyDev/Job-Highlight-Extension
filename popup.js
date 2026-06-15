@@ -185,13 +185,59 @@ function importSettings(file) {
 
 /* ---- hidden jobs (stored in chrome.storage.local; managed on hidden.html) ---- */
 function refreshHiddenCount() {
-  chrome.storage.local.get({ manualHidden: {} }, (res) => {
-    $("hiddenCount").textContent = String(Object.keys(res.manualHidden || {}).length);
+  // Ask the background bridge so the count reflects the shared file (falls back
+  // to local automatically if the native host isn't installed).
+  chrome.runtime.sendMessage({ type: "lhvj-load" }, (state) => {
+    const hidden =
+      !chrome.runtime.lastError && state && state.manualHidden ? state.manualHidden : null;
+    if (hidden) {
+      $("hiddenCount").textContent = String(Object.keys(hidden).length);
+    } else {
+      chrome.storage.local.get({ manualHidden: {} }, (res) => {
+        $("hiddenCount").textContent = String(Object.keys(res.manualHidden || {}).length);
+      });
+    }
   });
 }
 
 function openHiddenPage() {
   chrome.tabs.create({ url: chrome.runtime.getURL("hidden.html") });
+}
+
+/* ---- profile sync (native host) setup helper ---- */
+function refreshSyncStatus() {
+  const pill = $("syncStatus");
+  const hint = $("syncHint");
+  const id = chrome.runtime.id;
+  chrome.runtime.sendMessage({ type: "lhvj-host-status" }, (resp) => {
+    const on = !chrome.runtime.lastError && resp && resp.connected;
+    pill.textContent = on ? "On" : "Off";
+    pill.className = "pill " + (on ? "pill-on" : "pill-off");
+    hint.innerHTML = on
+      ? "Clicked &amp; hidden jobs are shared across all profiles."
+      : 'Per-profile only. To share across profiles: click <b>Copy setup command</b>, ' +
+        "run it in the extension's <code>native-host</code> folder, then restart Chrome.";
+    $("copySetup").textContent = on ? "Copy setup command (re-run)" : "Copy setup command";
+    $("copySetup").dataset.cmd = "install.bat " + id;
+  });
+}
+
+function copySetupCommand() {
+  const btn = $("copySetup");
+  const cmd = btn.dataset.cmd || "install.bat " + chrome.runtime.id;
+  navigator.clipboard.writeText(cmd).then(
+    () => {
+      const prev = btn.textContent;
+      btn.textContent = "Copied: " + cmd;
+      setTimeout(() => {
+        btn.textContent = prev;
+      }, 2500);
+    },
+    () => {
+      // Clipboard blocked — show the command so it can be copied manually.
+      $("syncHint").textContent = "Run this in the native-host folder: " + cmd;
+    }
+  );
 }
 
 /* ---- init ---- */
@@ -265,7 +311,9 @@ function init() {
   });
 
   $("viewHidden").addEventListener("click", openHiddenPage);
+  $("copySetup").addEventListener("click", copySetupCommand);
   refreshHiddenCount();
+  refreshSyncStatus();
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === "local" && changes.manualHidden) refreshHiddenCount();
   });

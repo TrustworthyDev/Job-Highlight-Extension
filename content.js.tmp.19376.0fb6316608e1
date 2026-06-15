@@ -31,24 +31,16 @@ const IS_LINKEDIN = /(^|\.)linkedin\.com$/i.test(location.hostname);
 const VIEWED_CLASS = "lhvj-viewed";
 const REMOVED_CLASS = "lhvj-removed";
 
-// True only while our extension context is still valid. After the unpacked
-// extension is reloaded, an old content script left in an open tab becomes
-// "orphaned": chrome.runtime.id goes undefined and any chrome.* call fails. We
-// check this so the orphaned copy goes silent instead of erroring.
-function extAlive() {
-  return !!(chrome.runtime && chrome.runtime.id);
-}
-
 // Persist as DELTA ops through the background bridge. Sending only the items we
 // touched (not our whole state) lets the host merge them into the shared file, so
 // no profile ever overwrites another profile's clicked/hidden data. The merged
 // result comes back via storage.onChanged(local) below, which adopts it.
 function sendOps(ops) {
-  if (!extAlive()) return;
   try {
     chrome.runtime.sendMessage({ type: "lhvj-apply", ops });
   } catch (e) {
-    /* context invalidated mid-navigation — ignore */
+    /* context invalidated mid-navigation — keep at least this profile's local copy */
+    chrome.storage.local.set({ manualHidden, seenJobs });
   }
 }
 
@@ -214,19 +206,18 @@ function recordFor(card) {
 function hideCard(card) {
   const sig = sigFor(card);
   if (!sig) return;
-  const record = recordFor(card);
-  manualHidden[sig] = record; // optimistic; merged truth arrives via onChanged
+  manualHidden[sig] = recordFor(card);
+  saveHidden();
   reconcile();
-  sendOps([{ type: "hide", sig, record }]);
 }
 
 /** Record that the user opened this card (our own "viewed" signal). */
 function markSeen(card) {
   const sig = getCardSig(card);
   if (!sig || seenJobs[sig]) return;
-  seenJobs[sig] = true; // optimistic
+  seenJobs[sig] = true;
+  saveSeen();
   reconcile();
-  sendOps([{ type: "seen", sig }]);
 }
 
 /**
@@ -469,20 +460,6 @@ function schedule() {
   }, 150);
 }
 
-// Pull the latest shared state from the background bridge and re-render. Called
-// when this tab regains focus, so switching to a profile shows other profiles'
-// clicks/hides immediately (the 1-minute background alarm is the slower backstop).
-function requestSync() {
-  if (!extAlive()) return;
-  chrome.runtime.sendMessage({ type: "lhvj-load" }, (state) => {
-    if (!chrome.runtime.lastError && state) {
-      manualHidden = state.manualHidden || {};
-      seenJobs = state.seenJobs || {};
-      reconcile();
-    }
-  });
-}
-
 function startPage() {
   reconcile();
   applyHighlights();
@@ -502,12 +479,6 @@ function startPage() {
     },
     { capture: true, passive: true }
   );
-
-  // Refresh from the shared file when the user returns to this tab/window.
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") requestSync();
-  });
-  window.addEventListener("focus", requestSync);
 }
 
 function init() {

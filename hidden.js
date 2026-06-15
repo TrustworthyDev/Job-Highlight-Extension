@@ -65,8 +65,8 @@ function makeCard(key, rec) {
   restore.title = "Un-hide this card";
   restore.addEventListener("click", () => {
     delete hidden[key];
-    chrome.storage.local.set({ manualHidden: hidden });
     render();
+    chrome.runtime.sendMessage({ type: "lhvj-apply", ops: [{ type: "unhide", sig: key }] });
   });
   li.appendChild(restore);
 
@@ -94,16 +94,25 @@ function render() {
 }
 
 function load() {
-  chrome.storage.local.get({ manualHidden: {} }, (res) => {
-    hidden = res.manualHidden || {};
-    render();
+  // Pull the shared state through the bridge (forces a fresh read of the shared
+  // file). Falls back to local if the native host isn't installed.
+  chrome.runtime.sendMessage({ type: "lhvj-load" }, (state) => {
+    if (!chrome.runtime.lastError && state) {
+      hidden = state.manualHidden || {};
+      render();
+    } else {
+      chrome.storage.local.get({ manualHidden: {} }, (res) => {
+        hidden = res.manualHidden || {};
+        render();
+      });
+    }
   });
 }
 
 $("clearAll").addEventListener("click", () => {
   hidden = {};
-  chrome.storage.local.set({ manualHidden: {} });
   render();
+  chrome.runtime.sendMessage({ type: "lhvj-apply", ops: [{ type: "clearHidden" }] });
 });
 
 // Keep in sync if cards are hidden/restored elsewhere while this page is open.

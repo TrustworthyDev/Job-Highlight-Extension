@@ -1,0 +1,9 @@
+{
+    "name":  "com.jobtools.shared",
+    "description":  "Hide and Highlight shared state host",
+    "path":  "D:\\Projects\\Chrome Extension\\Hide Job Items\\native-host\\host.bat",
+    "type":  "stdio",
+    "allowed_origins":  [
+                            "chrome-extension://idjkkjmjgikdejgeofdofnodjajiahcn/"
+                        ]
+}

@@ -473,7 +473,6 @@ function schedule() {
 // when this tab regains focus, so switching to a profile shows other profiles'
 // clicks/hides immediately (the 1-minute background alarm is the slower backstop).
 function requestSync() {
-  if (!extAlive()) return;
   chrome.runtime.sendMessage({ type: "lhvj-load" }, (state) => {
     if (!chrome.runtime.lastError && state) {
       manualHidden = state.manualHidden || {};
