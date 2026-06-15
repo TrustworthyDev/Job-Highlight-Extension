@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "hideViewedEnabled": false,
+  "highlightEnabled": true,
+  "highlightGroups": [
+    {
+      "color": "#7fffd4",
+      "enabled": true,
+      "id": "g1780400520388848",
+      "label": "C#",
+      "terms": [
+        "C#",
+        ".NET",
+        "ASP.NET"
+      ]
+    },
+    {
+      "color": "#8a2be2",
+      "enabled": true,
+      "id": "g1780400520388670",
+      "label": "Java",
+      "terms": [
+        "Java",
+        "Spring Boot",
+        "Kotlin",
+        "GoLang",
+        "Elixir",
+        "PHP",
+        "Ruby on Rails",
+        "Ruby",
+        "Rust"
+      ]
+    },
+    {
+      "color": "#ffff00",
+      "enabled": true,
+      "id": "g1780400520388885",
+      "label": "Python",
+      "terms": [
+        "Python",
+        "Django",
+        "FastAPI",
+        "Flask"
+      ]
+    },
+    {
+      "color": "#00ffff",
+      "enabled": true,
+      "id": "g1780400520388197",
+      "label": "React",
+      "terms": [
+        "React",
+        "React.js",
+        "Next.js",
+        "Angluar",
+        "AngularJS",
+        "Vue.js",
+        "VueJS",
+        "Nuxt.js",
+        "NuxtJS"
+      ]
+    },
+    {
+      "color": "#00ff7f",
+      "enabled": true,
+      "id": "g1780400520388216",
+      "label": "Node",
+      "terms": [
+        "Node",
+        "NodeJS",
+        "Node.js",
+        "Nest.js",
+        "NestJS",
+        "Express.js",
+        "ExpressJS"
+      ]
+    },
+    {
+      "color": "#1e90ff",
+      "enabled": true,
+      "id": "g1780400520388553",
+      "label": "Easy Apply",
+      "terms": [
+        "Easy Apply"
+      ]
+    },
+    {
+      "color": "#ff0000",
+      "enabled": true,
+      "id": "g178040133262175",
+      "label": "Hybrid, On-Site",
+      "terms": [
+        "On-Site",
+        "Hybrid",
+        "Applied"
+      ]
+    },
+    {
+      "color": "#fd4112",
+      "enabled": true,
+      "id": "g1780402543068500",
+      "label": "Viewed",
+      "terms": [
+        "Viewed"
+      ]
+    }
+  ]
+}

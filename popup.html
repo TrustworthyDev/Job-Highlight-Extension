@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Hide &amp; Highlight</h1>
+      <span class="switch master" title="Turn the whole extension on/off">
+        <input type="checkbox" id="extensionEnabled" />
+        <span class="slider"></span>
+      </span>
+    </header>
+
+    <section class="toggles" id="featureToggles">
+      <label class="row">
+        <span>Tint viewed listings (LinkedIn)</span>
+        <span class="switch">
+          <input type="checkbox" id="hideViewed" />
+          <span class="slider"></span>
+        </span>
+      </label>
+      <label class="row">
+        <span>Per-card Hide button (all sites)</span>
+        <span class="switch">
+          <input type="checkbox" id="manualHide" />
+          <span class="slider"></span>
+        </span>
+      </label>
+      <label class="row">
+        <span>Highlight keywords (all sites)</span>
+        <span class="switch">
+          <input type="checkbox" id="highlightOn" />
+          <span class="slider"></span>
+        </span>
+      </label>
+    </section>
+
+    <section class="groups">
+      <div class="groups-head">
+        <span class="caption">Highlighted words</span>
+        <button id="addBtn" class="add-btn" title="Add keyword">+</button>
+      </div>
+      <input id="filter" class="filter" type="text" placeholder="Filter…" />
+      <ul id="list" class="list"></ul>
+      <p id="empty" class="empty" hidden>No keywords yet. Click + to add one.</p>
+    </section>
+
+    <!-- Add / edit form (hidden until + or edit is clicked) -->
+    <section id="form" class="form" hidden>
+      <div class="field">
+        <label for="fLabel">Label</label>
+        <input id="fLabel" type="text" placeholder="e.g. Java, .NET" />
+      </div>
+      <div class="field">
+        <label for="fTerms">Words to match (comma-separated)</label>
+        <input id="fTerms" type="text" placeholder="e.g. Java, .NET, JVM" />
+      </div>
+      <div class="field color-field">
+        <label for="fColor">Color</label>
+        <input id="fColor" type="color" value="#ffff00" />
+      </div>
+      <div class="form-actions">
+        <button id="cancelBtn" class="ghost">Cancel</button>
+        <button id="saveBtn" class="primary">Save</button>
+      </div>
+    </section>
+
+    <section class="groups">
+      <button id="viewHidden" class="ghost wide">
+        View hidden jobs (<span id="hiddenCount">0</span>)
+      </button>
+    </section>
+
+    <footer class="footer">
+      <button id="exportBtn" class="ghost">Export settings</button>
+      <button id="importBtn" class="ghost">Import settings</button>
+      <input id="importFile" type="file" accept="application/json,.json" hidden />
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

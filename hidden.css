@@ -1,0 +1,152 @@
+:root {
+  --bg: #1b1f23;
+  --card: #242a30;
+  --border: #353c44;
+  --text: #e9eef2;
+  --muted: #9fb0bd;
+  --accent: #70b5f9;
+  --danger: #c0392b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  padding: 24px;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 760px;
+  margin: 0 auto 16px;
+}
+
+.page-head h1 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.count {
+  display: inline-block;
+  min-width: 22px;
+  text-align: center;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover {
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.empty {
+  max-width: 760px;
+  margin: 40px auto;
+  text-align: center;
+  color: var(--muted);
+}
+
+.cards {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.logo {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #11151a;
+}
+.logo.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.title:hover {
+  text-decoration: underline;
+}
+.meta {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sub {
+  margin-top: 2px;
+  color: #6b7a87;
+  font-size: 12px;
+}
+
+.restore {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.restore:hover {
+  border-color: var(--accent);
+  color: #fff;
+}
