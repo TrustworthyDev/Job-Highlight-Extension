@@ -22,14 +22,14 @@
  *   { type:"unsee",  sig }            forget a clicked card
  *   { type:"clearHidden" }            restore all hidden cards
  *
- * Writes are atomic (temp file + rename) so a crash can't leave a half file.
+ * Everything lives in ONE file: shared-state.json. We write it directly (no temp
+ * file) so the single file is always the latest data.
  */
 
 const fs = require("fs");
 const path = require("path");
 
 const FILE = path.join(__dirname, "shared-state.json");
-const TMP = FILE + ".tmp";
 
 function readState() {
   try {
@@ -42,8 +42,7 @@ function readState() {
 
 function writeState(state) {
   const clean = { seen: state.seen || {}, hidden: state.hidden || {} };
-  fs.writeFileSync(TMP, JSON.stringify(clean));
-  fs.renameSync(TMP, FILE);
+  fs.writeFileSync(FILE, JSON.stringify(clean, null, 2));
 }
 
 function send(msg) {
