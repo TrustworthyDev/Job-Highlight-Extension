@@ -1,9 +1,10 @@
 # Shared state across Chrome profiles (native host)
 
-This makes every Chrome profile that loads the extension share **one** list of
-clicked ("viewed") and hidden jobs. One profile writes the state to a local JSON
-file; the next profile reads it and shows the same thing. (Designed for use **one
-profile at a time** — not simultaneously.)
+This makes every Chrome profile that loads the extension share **one** set of
+clicked ("viewed") jobs, hidden jobs, blocked companies and **highlight keyword
+groups**. One profile writes the state to a local JSON file; the next profile reads
+it and shows the same thing. (Designed for use **one profile at a time** — not
+simultaneously.)
 
 ```
 content.js ──► background.js ──(native messaging)──► host.js ──► shared-state.json
@@ -50,7 +51,8 @@ it automatically.
 | `host.bat` | What Chrome launches (`node host.js`). |
 | `install.bat` / `install.ps1` | Registers the host for the current user. |
 | `uninstall.bat` | Removes the registration. |
-| `shared-state.json` | Created on first write. The shared data: `{ seen, hidden }`. |
+| `shared-state.json` | Created on first write. The shared data: `{ seen, hidden, companies, groups }`. `groups` (the highlight keyword groups) is an ordered array merged by group id; the key is absent until it's first seeded. |
+| `../linkedin-job-tools-settings.json` | One-way mirror of the keyword groups, rewritten by the host whenever they change, in the same shape as the extension's **Export settings**. Read-only as far as Chrome is concerned — use **Import settings** to load it back. |
 
 ## If the host isn't installed
 

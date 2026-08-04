@@ -1,12 +1,17 @@
 /**
  * Service worker. Two jobs:
  *   1. Seed default keyword groups + toggles from defaults.json on install.
- *   2. Bridge the content script / hidden page to the native host that owns the
- *      cross-profile shared file (clicked + hidden jobs). If the native host isn't
- *      installed, everything falls back to per-profile chrome.storage.local.
+ *   2. Bridge the content script / settings page to the native host that owns the
+ *      cross-profile shared file (clicked + hidden jobs, blocked companies and the
+ *      highlight keyword groups). If the native host isn't installed, everything
+ *      falls back to per-profile chrome.storage.local.
  *
- * File state shape (owned by the host):   { seen: {sig:true}, hidden: {sig:record} }
- * Extension state shape (what we pass):    { seenJobs, manualHidden }
+ * File state shape (owned by the host):
+ *   { seen: {sig:true}, hidden: {sig:record}, companies: {norm:name}, groups: [group] }
+ * Extension state shape (what we pass, and mirror into chrome.storage.local):
+ *   { seenJobs, manualHidden, blockedCompanies, highlightGroups }
+ *
+ * Only the on/off toggles stay in chrome.storage.sync — everything else is shared.
  */
 
 const NATIVE_HOST = "com.jobtools.shared";
@@ -24,6 +29,8 @@ chrome.runtime.onInstalled.addListener(async () => {
       hideViewedEnabled: defaults.hideViewedEnabled !== false,
       manualHideEnabled: defaults.manualHideEnabled !== false,
       highlightEnabled: defaults.highlightEnabled !== false,
+      hideEasyApplyEnabled: defaults.hideEasyApplyEnabled === true, // opt-in
+
       highlightGroups: defaults.highlightGroups || [],
     });
   } catch (e) {
@@ -65,11 +72,24 @@ function nativeApply(ops) {
   });
 }
 
+function normCompany(s) {
+  return String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
 function localFile() {
   return new Promise((resolve) => {
-    chrome.storage.local.get({ manualHidden: {}, seenJobs: {} }, (r) => {
-      resolve({ seen: r.seenJobs || {}, hidden: r.manualHidden || {} });
-    });
+    chrome.storage.local.get(
+      { manualHidden: {}, seenJobs: {}, blockedCompanies: {}, highlightGroups: null },
+      (r) => {
+        resolve({
+          seen: r.seenJobs || {},
+          hidden: r.manualHidden || {},
+          companies: r.blockedCompanies || {},
+          // null until seeded — same meaning as in the host's readState().
+          groups: Array.isArray(r.highlightGroups) ? r.highlightGroups : null,
+        });
+      }
+    );
   });
 }
 
@@ -77,6 +97,7 @@ function localFile() {
 function applyOps(state, ops) {
   state.seen = state.seen || {};
   state.hidden = state.hidden || {};
+  state.companies = state.companies || {};
   for (const op of ops || []) {
     if (!op || !op.type) continue;
     if (op.type === "seen" && op.sig) state.seen[op.sig] = true;
@@ -85,28 +106,92 @@ function applyOps(state, ops) {
     else if (op.type === "unhide" && op.sig) delete state.hidden[op.sig];
     else if (op.type === "clearHidden") state.hidden = {};
     else if (op.type === "clearSeen") state.seen = {};
+    else if (op.type === "addCompany" && normCompany(op.name))
+      state.companies[normCompany(op.name)] = String(op.name).trim();
+    else if (op.type === "removeCompany" && op.name)
+      delete state.companies[normCompany(op.name)];
+    // Keyword groups: an ordered array merged by group id (see host.js).
+    else if (op.type === "putGroup" && op.group && op.group.id) {
+      const list = Array.isArray(state.groups) ? state.groups : [];
+      const i = list.findIndex((g) => g && g.id === op.group.id);
+      if (i === -1) list.push(op.group);
+      else list[i] = op.group;
+      state.groups = list;
+    } else if (op.type === "removeGroup" && op.id) {
+      state.groups = (Array.isArray(state.groups) ? state.groups : []).filter(
+        (g) => g && g.id !== op.id
+      );
+    } else if (op.type === "setGroups" && Array.isArray(op.groups)) {
+      state.groups = op.groups;
+    }
   }
   return state;
 }
 
 function mapToExt(file) {
-  return { manualHidden: file.hidden || {}, seenJobs: file.seen || {} };
+  return {
+    manualHidden: file.hidden || {},
+    seenJobs: file.seen || {},
+    blockedCompanies: file.companies || {},
+    highlightGroups: Array.isArray(file.groups) ? file.groups : [],
+  };
+}
+
+/** Merge delta ops into the shared file (or local if no host). Returns file shape. */
+async function mergeOps(ops) {
+  const file = await nativeApply(ops);
+  // No native host — merge into this profile's local store instead.
+  return file || applyOps(await localFile(), ops);
+}
+
+/**
+ * Keyword groups used to live in chrome.storage.sync. The shared file is the
+ * source of truth now, so the first load after the upgrade moves them across:
+ * whatever this profile already had (or defaults.json on a fresh install) becomes
+ * the file's initial list. Runs once — after it, file.groups is an array, and an
+ * empty array means "the user deleted them all", not "not seeded yet".
+ */
+async function seedGroups() {
+  try {
+    const res = await chrome.storage.sync.get({ highlightGroups: null });
+    if (Array.isArray(res.highlightGroups) && res.highlightGroups.length) {
+      return res.highlightGroups;
+    }
+  } catch (e) {
+    /* fall through to the bundled defaults */
+  }
+  try {
+    const data = await fetch(chrome.runtime.getURL("defaults.json")).then((r) => r.json());
+    return data.highlightGroups || [];
+  } catch (e) {
+    return [];
+  }
 }
 
 /** Source of truth = the shared file; fall back to per-profile local. */
 async function loadState() {
-  const file = await nativeGet();
-  return mapToExt(file || (await localFile()));
+  let file = (await nativeGet()) || (await localFile());
+  if (!Array.isArray(file.groups)) {
+    file = await mergeOps([{ type: "setGroups", groups: await seedGroups() }]);
+  }
+  return mapToExt(file);
 }
+
+const GROUP_OPS = new Set(["putGroup", "removeGroup", "setGroups"]);
 
 /** Merge the delta ops into the shared file (or local if no host), mirror to local. */
 async function applyState(ops) {
-  let file = await nativeApply(ops);
-  if (!file) {
-    // No native host — merge into this profile's local store instead.
-    file = applyOps(await localFile(), ops);
+  // A putGroup against a file that hasn't been seeded yet would merge into an
+  // empty list and drop every group that still only exists in storage.sync. So
+  // make sure the seed has happened before any per-group edit lands.
+  const editsGroups = (ops || []).some((op) => op && GROUP_OPS.has(op.type) && op.type !== "setGroups");
+  if (editsGroups) {
+    const file = (await nativeGet()) || (await localFile());
+    if (!Array.isArray(file.groups)) {
+      await mergeOps([{ type: "setGroups", groups: await seedGroups() }]);
+    }
   }
-  const ext = mapToExt(file);
+  const ext = mapToExt(await mergeOps(ops));
   await new Promise((res) => chrome.storage.local.set(ext, res));
   return ext;
 }

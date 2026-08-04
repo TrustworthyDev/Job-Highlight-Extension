@@ -22,9 +22,11 @@ let extensionEnabled = true; // master on/off for the whole extension
 let hideViewedEnabled = true;
 let highlightEnabled = true;
 let manualHideEnabled = true;
+let hideEasyApplyEnabled = false; // opt-in: hides every LinkedIn "Easy Apply" card
 let groups = [];
-let manualHidden = {}; // { [sig]: record }     hidden cards
-let seenJobs = {}; // { [sig]: true }       cards we saw the user click
+let manualHidden = {}; // { [sig]: record }        hidden cards
+let seenJobs = {}; // { [sig]: true }           cards we saw the user click
+let blockedCompanies = {}; // { [normName]: displayName }  hide every card from these companies
 
 const IS_LINKEDIN = /(^|\.)linkedin\.com$/i.test(location.hostname);
 
@@ -67,6 +69,18 @@ function isViewed(card) {
   for (const node of nodes) {
     if (node.childElementCount > 0) continue; // leaf nodes only
     if ((node.textContent || "").trim() === "Viewed") return true;
+  }
+  return false;
+}
+
+/** LinkedIn labels these cards "Easy Apply" in the footer. Matched on the label
+    text rather than a class name, for the same reason as isViewed: LinkedIn's
+    class names churn, the visible label doesn't. */
+function isEasyApply(card) {
+  const nodes = card.querySelectorAll("span, li, div, button");
+  for (const node of nodes) {
+    if (node.childElementCount > 0) continue; // leaf nodes only
+    if ((node.textContent || "").replace(/\s+/g, " ").trim() === "Easy Apply") return true;
   }
   return false;
 }
@@ -153,6 +167,21 @@ function getCardSig(item) {
   const company = getCompanyText(item).toLowerCase();
   if (!title && !company) return null;
   return "lk:" + djb2(title + "|" + company);
+}
+
+// Company-block normalization must match the host + popup.
+function normCompany(s) {
+  return String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/** True if a card's company matches any blocked-company term (substring match). */
+function companyBlocked(companyText) {
+  const c = normCompany(companyText);
+  if (!c) return false;
+  for (const term in blockedCompanies) {
+    if (term && c.includes(term)) return true;
+  }
+  return false;
 }
 
 /* ============================ generic cards ============================= */
@@ -250,7 +279,14 @@ function reconcile() {
       const sig = getCardSig(item);
       const viewed = isViewed(item) || (sig && seenJobs[sig]);
       item.classList.toggle(VIEWED_CLASS, hideViewedEnabled && Boolean(viewed));
-      item.classList.toggle(REMOVED_CLASS, manualHideEnabled && Boolean(sig && manualHidden[sig]));
+      // Per-card hides follow the Hide-button toggle; company blocks are an
+      // explicit rule, so they apply whenever the extension is on.
+      const hideByCard = manualHideEnabled && sig && manualHidden[sig];
+      const hide =
+        hideByCard ||
+        companyBlocked(getCompanyText(item)) ||
+        (hideEasyApplyEnabled && isEasyApply(item));
+      item.classList.toggle(REMOVED_CLASS, Boolean(hide));
     }
   } else {
     document.querySelectorAll(GENERIC_CARD_SELECTOR).forEach((card) => {
@@ -343,13 +379,28 @@ function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/* A term only counts as a match when it is BOTH:
+     - the same case you typed (no "i" flag) — "Java" skips "java";
+     - a whole token, not glued to more letters/digits — "Go" skips "ArgoCD" and
+       "Google", but still matches "Go,", "(Go)" and "Go.".
+   The edges are lookarounds rather than \b because \b is defined against word
+   characters, so it fails on terms that start or end with punctuation: "\b.NET\b"
+   never matches " .NET " and "\bC#\b" never matches "C# ".
+   Longest terms first so "Node.js" wins over "Node" and "GoLang" over "Go". */
 function buildRegex(terms) {
   const sorted = terms
     .map((t) => t.trim())
     .filter(Boolean)
     .sort((a, b) => b.length - a.length);
   if (!sorted.length) return null;
-  return new RegExp("(" + sorted.map(escapeRegExp).join("|") + ")", "gi");
+  const body = "(" + sorted.map(escapeRegExp).join("|") + ")";
+  try {
+    // \p{L}/\p{N} so accented words ("Gö", "Straße") count as letters too.
+    return new RegExp("(?<![\\p{L}\\p{N}])" + body + "(?![\\p{L}\\p{N}])", "gu");
+  } catch (e) {
+    // A term the "u" flag rejects shouldn't silently kill every highlight.
+    return new RegExp("(?<![A-Za-z0-9])" + body + "(?![A-Za-z0-9])", "g");
+  }
 }
 
 function shouldSkip(node) {
@@ -478,12 +529,38 @@ function requestSync() {
     if (!chrome.runtime.lastError && state) {
       manualHidden = state.manualHidden || {};
       seenJobs = state.seenJobs || {};
+      blockedCompanies = state.blockedCompanies || {};
       reconcile();
     }
   });
 }
 
+/**
+ * One compact line in the page console naming the build that is actually running,
+ * plus a live self-test of the matcher. This is the only reliable way to tell a
+ * stale content script from a fresh one: an old script prints nothing (or an older
+ * version), and TWO lines with different ids mean two copies of the extension are
+ * installed and both are injecting — the older one keeps highlighting the old way
+ * no matter how often the new one is reloaded.
+ */
+function logBuildBanner() {
+  let probe = "regex unavailable";
+  try {
+    const re = buildRegex(["Go"]);
+    const hit = (s) => ((s.match(re) || []).length ? "HIGHLIGHT" : "skip");
+    re.lastIndex = 0;
+    probe = `flags=${re.flags} "ArgoCD"=${hit("ArgoCD")} "go"=${hit("go")} "Go,"=${hit("Go,")}`;
+  } catch (e) {
+    probe = "regex error: " + e.message;
+  }
+  console.info(
+    `[Hide & Highlight] v${chrome.runtime.getManifest().version} · id=${chrome.runtime.id} · ` +
+      `case-sensitive whole-word · ${groups.length} keyword group(s) · self-test: ${probe}`
+  );
+}
+
 function startPage() {
+  logBuildBanner();
   reconcile();
   applyHighlights();
 
@@ -510,21 +587,42 @@ function startPage() {
   window.addEventListener("focus", requestSync);
 }
 
+/**
+ * Keyword groups come from the shared state. A pre-upgrade service worker answers
+ * without a highlightGroups key at all, which would silently disable highlighting
+ * until the extension is reloaded — so no key means "read the old chrome.storage.sync
+ * home". An empty array is taken at face value (the user deleted them all).
+ */
+function withGroups(list, done) {
+  if (Array.isArray(list)) {
+    groups = list;
+    done();
+    return;
+  }
+  chrome.storage.sync.get({ highlightGroups: [] }, (res) => {
+    groups = res.highlightGroups || [];
+    done();
+  });
+}
+
 function init() {
+  // Toggles stay in chrome.storage.sync (per Google account). Keyword groups come
+  // from the shared file alongside the hidden/clicked cards, so every profile
+  // highlights the same words.
   chrome.storage.sync.get(
     {
       extensionEnabled: true,
       hideViewedEnabled: true,
       highlightEnabled: true,
       manualHideEnabled: true,
-      highlightGroups: [],
+      hideEasyApplyEnabled: false,
     },
     (res) => {
       extensionEnabled = res.extensionEnabled;
       hideViewedEnabled = res.hideViewedEnabled;
       highlightEnabled = res.highlightEnabled;
       manualHideEnabled = res.manualHideEnabled;
-      groups = res.highlightGroups || [];
+      hideEasyApplyEnabled = res.hideEasyApplyEnabled;
 
       // Load the shared state via the background bridge (falls back to this
       // profile's local storage if the native host isn't installed).
@@ -532,14 +630,19 @@ function init() {
         if (!chrome.runtime.lastError && state) {
           manualHidden = state.manualHidden || {};
           seenJobs = state.seenJobs || {};
-          startPage();
+          blockedCompanies = state.blockedCompanies || {};
+          withGroups(state.highlightGroups, startPage);
         } else {
           // Background unavailable — fall back to this profile's local cache.
-          chrome.storage.local.get({ manualHidden: {}, seenJobs: {} }, (loc) => {
-            manualHidden = loc.manualHidden || {};
-            seenJobs = loc.seenJobs || {};
-            startPage();
-          });
+          chrome.storage.local.get(
+            { manualHidden: {}, seenJobs: {}, blockedCompanies: {}, highlightGroups: null },
+            (loc) => {
+              manualHidden = loc.manualHidden || {};
+              seenJobs = loc.seenJobs || {};
+              blockedCompanies = loc.blockedCompanies || {};
+              withGroups(loc.highlightGroups, startPage);
+            }
+          );
         }
       });
     }
@@ -551,19 +654,31 @@ function init() {
       if (changes.hideViewedEnabled) hideViewedEnabled = changes.hideViewedEnabled.newValue;
       if (changes.manualHideEnabled) manualHideEnabled = changes.manualHideEnabled.newValue;
       if (changes.highlightEnabled) highlightEnabled = changes.highlightEnabled.newValue;
-      if (changes.highlightGroups) groups = changes.highlightGroups.newValue || [];
+      if (changes.hideEasyApplyEnabled) {
+        hideEasyApplyEnabled = changes.hideEasyApplyEnabled.newValue;
+      }
 
-      if (changes.extensionEnabled || changes.hideViewedEnabled || changes.manualHideEnabled) {
+      if (
+        changes.extensionEnabled ||
+        changes.hideViewedEnabled ||
+        changes.manualHideEnabled ||
+        changes.hideEasyApplyEnabled
+      ) {
         if (!extensionEnabled || !manualHideEnabled) hideFloat();
         reconcile();
       }
-      if (changes.extensionEnabled || changes.highlightEnabled || changes.highlightGroups) {
-        applyHighlights();
-      }
+      if (changes.extensionEnabled || changes.highlightEnabled) applyHighlights();
     } else if (area === "local") {
+      // Mirror of the shared file, refreshed by background.js — this is how a
+      // keyword edit in one profile reaches every open tab.
       if (changes.manualHidden) manualHidden = changes.manualHidden.newValue || {};
       if (changes.seenJobs) seenJobs = changes.seenJobs.newValue || {};
-      if (changes.manualHidden || changes.seenJobs) reconcile();
+      if (changes.blockedCompanies) blockedCompanies = changes.blockedCompanies.newValue || {};
+      if (changes.highlightGroups) {
+        groups = changes.highlightGroups.newValue || [];
+        applyHighlights();
+      }
+      if (changes.manualHidden || changes.seenJobs || changes.blockedCompanies) reconcile();
     }
   });
 }
