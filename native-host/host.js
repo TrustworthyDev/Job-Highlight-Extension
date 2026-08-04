@@ -10,7 +10,7 @@
  * length prefix followed by that many bytes of UTF-8 JSON, on stdin/stdout.
  *
  * Supported requests:
- *   { "op": "get" }              -> { ok:true, state:{ seen:{}, hidden:{} } }
+ *   { "op": "get" }              -> { ok:true, state:{ seen:{}, hidden:{}, companies:{}, groups:[] } }
  *   { "op": "apply", "ops":[..] } -> { ok:true, state:{...merged...} }
  *
  * "apply" MERGES the given delta ops into whatever is currently on disk (read ->
@@ -23,15 +23,30 @@
  *   { type:"clearHidden" }             restore all hidden cards
  *   { type:"addCompany",    name }     hide all cards from this company
  *   { type:"removeCompany", name }     stop blocking a company
+ *   { type:"putGroup",    group }      add or update one highlight keyword group
+ *   { type:"removeGroup", id }         delete one keyword group
+ *   { type:"setGroups",   groups }     replace the whole list (import / first seed)
  *
- * Everything lives in ONE file: shared-state.json. We write it directly (no temp
- * file) so the single file is always the latest data.
+ * Keyword groups are an ordered array (display order matters), so they merge by
+ * group id rather than by object key like the maps above.
+ *
+ * The shared state lives in ONE file: shared-state.json. We write it directly (no
+ * temp file) so the single file is always the latest data. Keyword changes are
+ * additionally mirrored, one-way, into ../linkedin-job-tools-settings.json in the
+ * same shape "Export settings" produces.
  */
 
 const fs = require("fs");
 const path = require("path");
 
 const FILE = path.join(__dirname, "shared-state.json");
+
+// Human-readable mirror of the keyword groups, written next to the extension in
+// the same shape "Export settings" produces (so it can be imported straight back).
+// shared-state.json stays the source of truth; this is a one-way copy for reading
+// and version-controlling — editing it by hand does not feed back into Chrome.
+const SETTINGS_FILE = path.join(__dirname, "..", "linkedin-job-tools-settings.json");
+const GROUP_OPS = new Set(["putGroup", "removeGroup", "setGroups"]);
 
 // Company key normalization must match the extension's (content.js / popup.js).
 function normCompany(s) {
@@ -41,9 +56,16 @@ function normCompany(s) {
 function readState() {
   try {
     const obj = JSON.parse(fs.readFileSync(FILE, "utf8"));
-    return { seen: obj.seen || {}, hidden: obj.hidden || {}, companies: obj.companies || {} };
+    return {
+      seen: obj.seen || {},
+      hidden: obj.hidden || {},
+      companies: obj.companies || {},
+      // null (not []) while the key has never been written, so the extension can
+      // tell "no groups in the file yet, seed me" from "the user deleted them all".
+      groups: Array.isArray(obj.groups) ? obj.groups : null,
+    };
   } catch (e) {
-    return { seen: {}, hidden: {}, companies: {} };
+    return { seen: {}, hidden: {}, companies: {}, groups: null };
   }
 }
 
@@ -53,7 +75,37 @@ function writeState(state) {
     hidden: state.hidden || {},
     companies: state.companies || {},
   };
+  // Only write the key once groups actually exist — otherwise the first unrelated
+  // op (a hide, say) would stamp an empty list and the seed above would never run.
+  if (Array.isArray(state.groups)) clean.groups = state.groups;
   fs.writeFileSync(FILE, JSON.stringify(clean, null, 2));
+}
+
+/**
+ * Rewrite linkedin-job-tools-settings.json with the current keyword groups.
+ * Any other keys already in that file (the toggles from an earlier export) are
+ * kept as they are — only highlightGroups is replaced. Failures are swallowed:
+ * the folder may be read-only, and that must not break the actual save.
+ */
+function writeSettingsMirror(groups) {
+  if (!Array.isArray(groups)) return;
+  let existing = {};
+  try {
+    const parsed = JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8"));
+    if (parsed && typeof parsed === "object") existing = parsed;
+  } catch (e) {
+    /* no file yet, or unreadable — start from scratch */
+  }
+  try {
+    const out = Object.assign({}, existing, {
+      version: existing.version || 1,
+      highlightGroups: groups,
+      savedAt: new Date().toISOString(),
+    });
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(out, null, 2));
+  } catch (e) {
+    /* read-only location — the shared state is still saved, so carry on */
+  }
 }
 
 function send(msg) {
@@ -80,6 +132,22 @@ function applyOps(state, ops) {
       state.companies[normCompany(op.name)] = String(op.name).trim();
     else if (op.type === "removeCompany" && op.name)
       delete state.companies[normCompany(op.name)];
+    // Groups are matched by id so two profiles editing different groups merge
+    // instead of overwriting each other's list. Note groups is deliberately NOT
+    // initialised alongside the maps above — it stays null until something sets it.
+    else if (op.type === "putGroup" && op.group && op.group.id) {
+      const list = Array.isArray(state.groups) ? state.groups : [];
+      const i = list.findIndex((g) => g && g.id === op.group.id);
+      if (i === -1) list.push(op.group);
+      else list[i] = op.group;
+      state.groups = list;
+    } else if (op.type === "removeGroup" && op.id) {
+      state.groups = (Array.isArray(state.groups) ? state.groups : []).filter(
+        (g) => g && g.id !== op.id
+      );
+    } else if (op.type === "setGroups" && Array.isArray(op.groups)) {
+      state.groups = op.groups;
+    }
   }
   return state;
 }
@@ -91,6 +159,11 @@ function handle(msg) {
     } else if (msg.op === "apply") {
       const state = applyOps(readState(), msg.ops); // read -> merge -> write
       writeState(state);
+      // Only on keyword changes — no point rewriting the settings file on every
+      // card click.
+      if ((msg.ops || []).some((op) => op && GROUP_OPS.has(op.type))) {
+        writeSettingsMirror(state.groups);
+      }
       send({ ok: true, state: state });
     } else {
       send({ ok: false, error: "unknown op: " + msg.op });

@@ -90,6 +90,82 @@ body {
   margin: 0;
 }
 
+.brand-sub {
+  color: var(--faint);
+  font-size: 14px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+
+/* ---------------------------- tabs ---------------------------- */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 11px 14px;
+  margin-bottom: -1px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.tab.is-active .count {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent);
+}
+
+/* ---------------------------- panels ---------------------------- */
+
+.panel {
+  padding-top: 24px;
+}
+.panel[hidden] {
+  display: none;
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.panel-head h2 {
+  font-size: 17px;
+  font-weight: 640;
+  margin: 0;
+}
+.sub-head {
+  margin-top: 34px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
 .bar-actions {
   display: flex;
   align-items: center;
@@ -209,7 +285,7 @@ body {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin: 20px 0 14px;
+  margin: 0 0 14px;
 }
 
 .search {
@@ -466,30 +542,192 @@ a.title:hover {
   margin: 0 0 10px;
 }
 
+/* ---------------------------- keyword groups ---------------------------- */
+
+/* A row inside #kwList — it replaces the card of whichever group is being edited,
+   so the accent border marks the spot the row came from. */
+.kw-form {
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.field {
+  flex: 1 1 170px;
+  min-width: 0;
+}
+.field-wide {
+  flex: 2 1 280px;
+}
+.field-color {
+  flex: 0 0 auto;
+}
+.field label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.field input[type="text"] {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+.field input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.field-hint {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--faint);
+}
+.field-hint code {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+.field input[type="color"] {
+  width: 46px;
+  height: 38px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg);
+  cursor: pointer;
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.badge {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+.card.is-paused {
+  opacity: 0.55;
+}
+.terms {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-actions {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+.card-actions .icon-btn {
+  width: 30px;
+  height: 30px;
+  font-size: 13px;
+}
+
+/* ---------------------------- sync & backup ---------------------------- */
+
+.pill {
+  flex: none;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 11px;
+  border-radius: 999px;
+}
+.pill-on {
+  background: rgba(31, 111, 63, 0.16);
+  color: #1f8a4c;
+}
+.pill-off {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+:root[data-theme="dark"] .pill-on {
+  background: rgba(80, 200, 130, 0.16);
+  color: #6fdc9a;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0 0 14px;
+  max-width: 620px;
+}
+.hint code {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.sub-title {
+  font-size: 13px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text);
+  margin: 26px 0 8px;
+}
+
+.list-plain,
+.steps {
+  max-width: 620px;
+  padding-left: 20px;
+}
+.list-plain {
+  list-style: disc;
+}
+.list-plain li,
+.steps li {
+  margin-bottom: 6px;
+}
+.steps li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 /* ---------------------------- blocked companies ---------------------------- */
 
-.companies {
-  margin-top: 36px;
-  padding-top: 22px;
-  border-top: 1px solid var(--border);
-}
-.section-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.companies h2 {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 16px;
-  font-weight: 640;
-  margin: 0;
-}
 .note {
   color: var(--muted);
   font-size: 13px;
-  margin: 5px 0 14px;
+  margin: 5px 0 0;
 }
 .company-add {
   display: flex;

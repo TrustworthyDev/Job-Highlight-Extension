@@ -4,6 +4,7 @@
   "hideViewedEnabled": true,
   "manualHideEnabled": true,
   "highlightEnabled": true,
+  "hideEasyApplyEnabled": false,
   "highlightGroups": [
     {
       "color": "#7fffd4",

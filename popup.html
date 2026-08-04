@@ -35,70 +35,30 @@
           <span class="slider"></span>
         </span>
       </label>
+      <label class="row">
+        <span>Hide “Easy Apply” jobs (LinkedIn)</span>
+        <span class="switch">
+          <input type="checkbox" id="hideEasyApply" />
+          <span class="slider"></span>
+        </span>
+      </label>
     </section>
 
-    <section class="groups">
-      <div class="groups-head">
-        <span class="caption">Highlighted words</span>
-        <button id="addBtn" class="add-btn" title="Add keyword">+</button>
-      </div>
-      <input id="filter" class="filter" type="text" placeholder="Filter…" />
-      <ul id="list" class="list"></ul>
-      <p id="empty" class="empty" hidden>No keywords yet. Click + to add one.</p>
-    </section>
-
-    <!-- Add / edit form (hidden until + or edit is clicked) -->
-    <section id="form" class="form" hidden>
-      <div class="field">
-        <label for="fLabel">Label</label>
-        <input id="fLabel" type="text" placeholder="e.g. Java, .NET" />
-      </div>
-      <div class="field">
-        <label for="fTerms">Words to match (comma-separated)</label>
-        <input id="fTerms" type="text" placeholder="e.g. Java, .NET, JVM" />
-      </div>
-      <div class="field color-field">
-        <label for="fColor">Color</label>
-        <input id="fColor" type="color" value="#ffff00" />
-      </div>
-      <div class="form-actions">
-        <button id="cancelBtn" class="ghost">Cancel</button>
-        <button id="saveBtn" class="primary">Save</button>
-      </div>
-    </section>
-
-    <section class="groups">
-      <div class="groups-head">
-        <span class="caption">Hide by company</span>
-      </div>
-      <div class="company-add">
-        <input id="companyInput" class="filter" type="text" placeholder="Company name to hide…" />
-        <button id="companyAdd" class="add-btn" title="Hide all jobs from this company">+</button>
-      </div>
-      <ul id="companyList" class="list"></ul>
-      <p id="companyEmpty" class="empty" hidden>No companies blocked. Add one above.</p>
-    </section>
-
-    <section class="groups">
-      <button id="viewHidden" class="ghost wide">
-        View hidden jobs (<span id="hiddenCount">0</span>)
-      </button>
-    </section>
-
-    <section class="groups sync">
-      <div class="groups-head">
-        <span class="caption">Profile sync</span>
-        <span id="syncStatus" class="pill pill-off">checking…</span>
-      </div>
-      <button id="copySetup" class="ghost wide">Copy setup command</button>
-      <p id="syncHint" class="hint"></p>
-    </section>
-
-    <footer class="footer">
-      <button id="exportBtn" class="ghost">Export settings</button>
-      <button id="importBtn" class="ghost">Import settings</button>
-      <input id="importFile" type="file" accept="application/json,.json" hidden />
-    </footer>
+    <button id="openSettings" class="settings-btn">
+      <svg class="gear" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+        />
+      </svg>
+      <span class="settings-text">
+        Other settings
+        <small>Hidden jobs, keywords &amp; more</small>
+      </span>
+      <svg class="chev" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6l6 6-6 6" />
+      </svg>
+    </button>
 
     <script src="popup.js"></script>
   </body>

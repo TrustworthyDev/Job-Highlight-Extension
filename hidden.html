@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Hidden jobs</title>
+    <title>Job Tools — Settings</title>
     <script src="theme.js"></script>
     <link rel="stylesheet" href="hidden.css" />
   </head>
@@ -10,8 +10,8 @@
     <header class="topbar">
       <div class="wrap bar-inner">
         <div class="brand">
-          <h1>Hidden jobs</h1>
-          <span id="count" class="count">0</span>
+          <h1>Job Tools</h1>
+          <span class="brand-sub">Settings</span>
         </div>
         <div class="bar-actions">
           <button id="themeToggle" class="icon-btn" title="Theme: system" aria-label="Change theme">
@@ -27,82 +27,303 @@
               <path d="M21 13a8.4 8.4 0 0 1-10-10 8.5 8.5 0 1 0 10 10z" />
             </svg>
           </button>
-          <button id="clearAll" class="btn btn-danger">Clear all</button>
         </div>
       </div>
+      <nav id="tabs" class="wrap tabs" aria-label="Settings sections">
+        <button class="tab is-active" data-panel="panel-keywords" aria-selected="true">
+          Keywords <span id="kwCount" class="count">0</span>
+        </button>
+        <button class="tab" data-panel="panel-hidden" aria-selected="false">
+          Hidden jobs <span id="count" class="count">0</span>
+        </button>
+        <button class="tab" data-panel="panel-companies" aria-selected="false">
+          Companies <span id="companyCount" class="count">0</span>
+        </button>
+        <button class="tab" data-panel="panel-sync" aria-selected="false">Sync &amp; backup</button>
+      </nav>
     </header>
 
     <main class="wrap">
-      <section class="toolbar" aria-label="Filter hidden jobs">
-        <div class="search">
-          <svg class="search-ico" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M20 20l-3.5-3.5" />
-          </svg>
-          <input
-            id="search"
-            type="search"
-            autocomplete="off"
-            placeholder="Search title, company or location…"
-            aria-label="Search hidden jobs"
-          />
+      <!-- ------------------------------ hidden jobs ------------------------------ -->
+      <section id="panel-hidden" class="panel" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>Hidden jobs</h2>
+            <p class="note">Cards you hid with the per-card Hide button.</p>
+          </div>
+          <button id="clearAll" class="btn btn-danger">Clear all</button>
         </div>
 
-        <div class="controls">
-          <div id="rangeChips" class="chip-group" role="group" aria-label="Time range">
-            <button class="chip-btn is-active" data-range="all">All time</button>
-            <button class="chip-btn" data-range="today">Today</button>
-            <button class="chip-btn" data-range="7">7 days</button>
-            <button class="chip-btn" data-range="30">30 days</button>
+        <div class="toolbar">
+          <div class="search">
+            <svg class="search-ico" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3.5-3.5" />
+            </svg>
+            <input
+              id="search"
+              type="search"
+              autocomplete="off"
+              placeholder="Search title, company or location…"
+              aria-label="Search hidden jobs"
+            />
           </div>
 
-          <span class="select-wrap">
-            <select id="siteFilter" aria-label="Filter by site">
-              <option value="">All sites</option>
-            </select>
-          </span>
+          <div class="controls">
+            <div id="rangeChips" class="chip-group" role="group" aria-label="Time range">
+              <button class="chip-btn is-active" data-range="all">All time</button>
+              <button class="chip-btn" data-range="today">Today</button>
+              <button class="chip-btn" data-range="7">7 days</button>
+              <button class="chip-btn" data-range="30">30 days</button>
+            </div>
 
-          <span class="select-wrap">
-            <select id="sort" aria-label="Sort order">
-              <option value="new">Newest first</option>
-              <option value="old">Oldest first</option>
-              <option value="title">Title A–Z</option>
-              <option value="company">Company A–Z</option>
-            </select>
-          </span>
+            <span class="select-wrap">
+              <select id="siteFilter" aria-label="Filter by site">
+                <option value="">All sites</option>
+              </select>
+            </span>
+
+            <span class="select-wrap">
+              <select id="sort" aria-label="Sort order">
+                <option value="new">Newest first</option>
+                <option value="old">Oldest first</option>
+                <option value="title">Title A–Z</option>
+                <option value="company">Company A–Z</option>
+              </select>
+            </span>
+          </div>
+        </div>
+
+        <p id="resultInfo" class="result-info" hidden></p>
+
+        <ul id="list" class="cards"></ul>
+
+        <div id="empty" class="state" hidden>
+          <div class="state-ico" aria-hidden="true">👁</div>
+          <p class="state-title">No hidden jobs yet</p>
+          <p class="state-sub">Click “Hide” on a job card and it will show up here.</p>
+        </div>
+
+        <div id="noResults" class="state" hidden>
+          <div class="state-ico" aria-hidden="true">🔍</div>
+          <p class="state-title">Nothing matches those filters</p>
+          <p class="state-sub">
+            <button id="resetFilters" class="link-btn">Clear the filters</button> to see everything
+            again.
+          </p>
         </div>
       </section>
 
-      <p id="resultInfo" class="result-info" hidden></p>
-
-      <ul id="list" class="cards"></ul>
-
-      <div id="empty" class="state" hidden>
-        <div class="state-ico" aria-hidden="true">👁</div>
-        <p class="state-title">No hidden jobs yet</p>
-        <p class="state-sub">Click “Hide” on a job card and it will show up here.</p>
-      </div>
-
-      <div id="noResults" class="state" hidden>
-        <div class="state-ico" aria-hidden="true">🔍</div>
-        <p class="state-title">Nothing matches those filters</p>
-        <p class="state-sub">
-          <button id="resetFilters" class="link-btn">Clear the filters</button> to see everything
-          again.
-        </p>
-      </div>
-
-      <section class="companies">
-        <div class="section-head">
-          <h2>Blocked companies <span id="companyCount" class="count">0</span></h2>
+      <!-- ------------------------------ keywords ------------------------------ -->
+      <section id="panel-keywords" class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Highlighted words</h2>
+            <p class="note">
+              Job cards containing these words get a coloured highlight. Matching is
+              <b>case-sensitive</b> and matches <b>whole words</b> — “Go” is highlighted in
+              “Go, Python”, but not in “ArgoCD”, “Google” or “go”.
+            </p>
+          </div>
+          <button id="addBtn" class="btn btn-primary">Add group</button>
         </div>
-        <p class="note">Every job card from these companies is hidden automatically.</p>
+
+        <div class="toolbar">
+          <div class="search">
+            <svg class="search-ico" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M20 20l-3.5-3.5" />
+            </svg>
+            <input
+              id="filter"
+              type="search"
+              autocomplete="off"
+              placeholder="Filter groups…"
+              aria-label="Filter keyword groups"
+            />
+          </div>
+        </div>
+
+        <!-- The form lives inside the list so renderGroups() can move it to the row
+             being edited, keeping that group in its original position. -->
+        <ul id="kwList" class="cards">
+          <li id="form" class="kw-form" hidden>
+            <div class="fields">
+              <div class="field">
+                <label for="fLabel">Label</label>
+                <input id="fLabel" type="text" placeholder="e.g. Java" />
+              </div>
+              <div class="field field-wide">
+                <label for="fTerms">Words to match (comma-separated, case-sensitive)</label>
+                <input id="fTerms" type="text" placeholder="e.g. Java, JVM, Spring Boot" />
+                <p class="field-hint">
+                  Whole words only. Type each capitalisation you want to catch, e.g.
+                  <code>Node.js, NodeJS, nodejs</code>.
+                </p>
+              </div>
+              <div class="field field-color">
+                <label for="fColor">Colour</label>
+                <input id="fColor" type="color" value="#ffff00" />
+              </div>
+            </div>
+            <div class="form-actions">
+              <button id="cancelBtn" class="btn">Cancel</button>
+              <button id="saveBtn" class="btn btn-primary">Save group</button>
+            </div>
+          </li>
+        </ul>
+
+        <div id="kwEmpty" class="state" hidden>
+          <div class="state-ico" aria-hidden="true">🎨</div>
+          <p class="state-title">No keyword groups yet</p>
+          <p class="state-sub">Add one to start highlighting the roles you care about.</p>
+        </div>
+
+        <div id="kwNoResults" class="state" hidden>
+          <div class="state-ico" aria-hidden="true">🔍</div>
+          <p class="state-title">No group matches that filter</p>
+        </div>
+      </section>
+
+      <!-- ------------------------------ companies ------------------------------ -->
+      <section id="panel-companies" class="panel" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>Blocked companies</h2>
+            <p class="note">Every job card from these companies is hidden automatically.</p>
+          </div>
+        </div>
+
         <div class="company-add">
           <input id="companyInput" type="text" placeholder="Company name to block…" />
           <button id="companyAdd" class="btn btn-primary">Add</button>
         </div>
-        <p id="companyEmpty" class="state-inline" hidden>No companies blocked.</p>
+
         <ul id="companyList" class="chips"></ul>
+
+        <div id="companyEmpty" class="state" hidden>
+          <div class="state-ico" aria-hidden="true">🚫</div>
+          <p class="state-title">No companies blocked</p>
+          <p class="state-sub">Add a company above to hide all of its listings.</p>
+        </div>
+      </section>
+
+      <!-- ------------------------------ sync & backup ------------------------------ -->
+      <section id="panel-sync" class="panel" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>Profile sync</h2>
+            <p class="note">Share clicked &amp; hidden jobs across every Chrome profile.</p>
+          </div>
+          <span id="syncStatus" class="pill pill-off">checking…</span>
+        </div>
+
+        <p id="syncHint" class="hint"></p>
+
+        <h3 class="sub-title">What gets shared</h3>
+        <p class="hint">
+          Chrome keeps every profile's extension storage separate, so by default each
+          profile has its own history. Turning sync on puts these in one file that all
+          profiles read and write:
+        </p>
+        <ul class="hint list-plain">
+          <li><b>Clicked jobs</b> — so a job you opened in one profile shows as viewed in the others.</li>
+          <li><b>Hidden jobs</b> — hide a card once, it stays hidden everywhere.</li>
+          <li><b>Blocked companies</b> — one block list.</li>
+          <li><b>Keyword groups</b> — the same highlights on every profile.</li>
+        </ul>
+        <p class="hint">
+          The on/off toggles in the popup stay per-profile, so one profile can run with
+          highlighting off without changing the others.
+        </p>
+
+        <h3 class="sub-title">Turning it on</h3>
+        <ol class="hint steps">
+          <li>
+            <b>Install Node.js</b> if you don't have it — the helper that owns the file is a
+            small Node script. Check with <code>node --version</code> in a terminal.
+          </li>
+          <li>
+            <b>Copy the setup command</b> with the button below. It already contains this
+            profile's extension ID, which Chrome requires the helper to be registered
+            against.
+          </li>
+          <li>
+            <b>Open a terminal in the extension's <code>native-host</code> folder</b> and paste
+            the command. It writes a small manifest into the Windows registry telling Chrome
+            where the helper lives.
+          </li>
+          <li>
+            <b>Restart Chrome completely</b> — every window, including background ones. Chrome
+            only reads the registration at startup.
+          </li>
+          <li>
+            <b>Reopen this page.</b> The badge at the top of this section should read
+            <b>On</b>. If it still reads Off, see below.
+          </li>
+          <li>
+            <b>Repeat on each other profile.</b> Load the extension there, then run the setup
+            command <i>from that profile's page</i> — the ID differs per profile, and each one
+            needs its own registration. The file itself is shared, so nothing is duplicated.
+          </li>
+        </ol>
+
+        <div class="row-actions">
+          <button id="copySetup" class="btn">Copy setup command</button>
+        </div>
+
+        <h3 class="sub-title">How it stays in step</h3>
+        <p class="hint">
+          A profile reads the file when a page opens, and each click or hide sends only that
+          one change, which the helper merges into the file. Profiles never overwrite each
+          other — two profiles editing different keyword groups both keep their edit. An open
+          tab also re-reads the file every minute and whenever you switch back to its window,
+          so it picks up other profiles' changes without a reload. Designed for use one
+          profile at a time.
+        </p>
+
+        <h3 class="sub-title">If it still says Off</h3>
+        <ul class="hint list-plain">
+          <li><b>Node isn't installed or isn't on PATH</b> — <code>node --version</code> must work in a plain terminal.</li>
+          <li><b>The command was run in the wrong folder</b> — it has to be the <code>native-host</code> folder inside this extension.</li>
+          <li><b>Chrome wasn't fully restarted</b> — closing the last window isn't always enough; quit from the tray if it's still running.</li>
+          <li><b>The extension ID changed</b> — reloading an unpacked extension from a different folder gives it a new ID. Copy the command again and re-run it.</li>
+        </ul>
+        <p class="hint">
+          Nothing breaks while it's off: the extension just keeps everything in this profile's
+          own storage, and switching sync on later picks up from there.
+        </p>
+
+        <div class="panel-head sub-head">
+          <div>
+            <h2>Backup</h2>
+            <p class="note">Save your toggles and keyword groups to a file, or restore them.</p>
+          </div>
+        </div>
+        <p class="hint">
+          With sync on, every keyword change is also written straight to
+          <code>linkedin-job-tools-settings.json</code> in the extension folder, in the same
+          format as the export below — so there is always a readable, up-to-date copy you can
+          open or commit. That copy is <b>one-way</b>: editing the file by hand does not change
+          anything in Chrome, use <b>Import settings</b> for that. Without the native host
+          installed, nothing can be written to disk, so use <b>Export settings</b> instead.
+        </p>
+        <div class="row-actions">
+          <button id="exportBtn" class="btn">Export settings</button>
+          <button id="importBtn" class="btn">Import settings</button>
+          <input id="importFile" type="file" accept="application/json,.json" hidden />
+        </div>
+        <p id="backupHint" class="hint"></p>
+      </section>
+
+      <!-- ------------------------------ diagnostics ------------------------------ -->
+      <section class="panel-foot">
+        <p class="hint">
+          Running <b id="buildVersion">…</b> · id <code id="buildId">…</code>. If
+          <code>chrome://extensions</code> lists another copy of this extension with a
+          different id, that copy is injecting its own (older) script into job pages and will
+          keep highlighting the old way no matter how often this one is reloaded — remove it.
+        </p>
       </section>
     </main>
 

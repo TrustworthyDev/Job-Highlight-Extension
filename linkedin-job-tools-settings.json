@@ -4,17 +4,6 @@
   "highlightEnabled": true,
   "highlightGroups": [
     {
-      "color": "#7fffd4",
-      "enabled": true,
-      "id": "g1780400520388848",
-      "label": "C#",
-      "terms": [
-        "C#",
-        ".NET",
-        "ASP.NET"
-      ]
-    },
-    {
       "color": "#8a2be2",
       "enabled": true,
       "id": "g1780400520388670",
@@ -23,12 +12,25 @@
         "Java",
         "Spring Boot",
         "Kotlin",
+        "Go",
         "GoLang",
         "Elixir",
         "PHP",
         "Ruby on Rails",
         "Ruby",
         "Rust"
+      ]
+    },
+    {
+      "color": "#7fffd4",
+      "enabled": true,
+      "id": "g1780400520388848",
+      "label": "C#",
+      "terms": [
+        "C#",
+        ".NET",
+        "ASP.NET",
+        "ASP.NET MVC"
       ]
     },
     {
@@ -40,7 +42,8 @@
         "Python",
         "Django",
         "FastAPI",
-        "Flask"
+        "Flask",
+        "Django REST Framework"
       ]
     },
     {
@@ -57,7 +60,8 @@
         "Vue.js",
         "VueJS",
         "Nuxt.js",
-        "NuxtJS"
+        "NuxtJS",
+        "Nuxt.js"
       ]
     },
     {
@@ -103,6 +107,18 @@
       "terms": [
         "Viewed"
       ]
+    },
+    {
+      "id": "g1785856838656434",
+      "label": "Remote",
+      "terms": [
+        "Europe",
+        "European Union",
+        "Remote-first"
+      ],
+      "color": "#0055ff",
+      "enabled": true
     }
-  ]
+  ],
+  "savedAt": "2026-08-04T15:20:38.759Z"
 }
