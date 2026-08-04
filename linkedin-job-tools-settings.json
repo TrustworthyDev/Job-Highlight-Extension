@@ -80,15 +80,6 @@
       ]
     },
     {
-      "color": "#1e90ff",
-      "enabled": true,
-      "id": "g1780400520388553",
-      "label": "Easy Apply",
-      "terms": [
-        "Easy Apply"
-      ]
-    },
-    {
       "color": "#ff0000",
       "enabled": true,
       "id": "g178040133262175",
@@ -109,16 +100,17 @@
       ]
     },
     {
+      "color": "#0055ff",
+      "enabled": true,
       "id": "g1785856838656434",
       "label": "Remote",
       "terms": [
+        "Remote",
         "Europe",
         "European Union",
         "Remote-first"
-      ],
-      "color": "#0055ff",
-      "enabled": true
+      ]
     }
   ],
-  "savedAt": "2026-08-04T15:20:38.759Z"
+  "savedAt": "2026-08-04T15:45:22.724Z"
 }

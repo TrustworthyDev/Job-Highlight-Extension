@@ -73,14 +73,27 @@ function isViewed(card) {
   return false;
 }
 
-/** LinkedIn labels these cards "Easy Apply" in the footer. Matched on the label
-    text rather than a class name, for the same reason as isViewed: LinkedIn's
-    class names churn, the visible label doesn't. */
+/**
+ * LinkedIn labels these cards "Easy Apply" in the footer. Matched on the label text
+ * rather than a class name, for the same reason as isViewed: LinkedIn's class names
+ * churn, the visible label doesn't.
+ *
+ * The label is usually a bare text node sitting NEXT TO the LinkedIn icon:
+ *     <li class="…footer-item"><svg/> Easy Apply </li>
+ * so the element holding it has an element child and is never a leaf. Testing each
+ * element's OWN text (its direct text nodes, ignoring descendants) catches that
+ * layout as well as the plain <span>Easy Apply</span> one. Comparing the own text
+ * exactly — rather than searching the card's full textContent — is what keeps a job
+ * *titled* "Applied Scientist, Easy Apply Team" from being hidden.
+ */
 function isEasyApply(card) {
-  const nodes = card.querySelectorAll("span, li, div, button");
-  for (const node of nodes) {
-    if (node.childElementCount > 0) continue; // leaf nodes only
-    if ((node.textContent || "").replace(/\s+/g, " ").trim() === "Easy Apply") return true;
+  for (const el of card.querySelectorAll("span, li, div, button, p, a")) {
+    let own = "";
+    for (const node of el.childNodes) {
+      if (node.nodeType === 3) own += node.nodeValue; // text nodes only
+    }
+    // \s covers the &nbsp; LinkedIn sometimes puts between the two words.
+    if (own.replace(/\s+/g, " ").trim() === "Easy Apply") return true;
   }
   return false;
 }
@@ -379,10 +392,10 @@ function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/* A term only counts as a match when it is BOTH:
-     - the same case you typed (no "i" flag) — "Java" skips "java";
-     - a whole token, not glued to more letters/digits — "Go" skips "ArgoCD" and
-       "Google", but still matches "Go,", "(Go)" and "Go.".
+/* A term matches wherever it appears as a WHOLE word, in any capitalisation:
+   "Go" highlights "Go", "go" and "GO", and also "Go,", "(Go)" and "Go." — but not
+   the "go" buried in "ArgoCD", "Google" or "Mongo", because there it is glued to
+   more letters and isn't its own word.
    The edges are lookarounds rather than \b because \b is defined against word
    characters, so it fails on terms that start or end with punctuation: "\b.NET\b"
    never matches " .NET " and "\bC#\b" never matches "C# ".
@@ -396,10 +409,10 @@ function buildRegex(terms) {
   const body = "(" + sorted.map(escapeRegExp).join("|") + ")";
   try {
     // \p{L}/\p{N} so accented words ("Gö", "Straße") count as letters too.
-    return new RegExp("(?<![\\p{L}\\p{N}])" + body + "(?![\\p{L}\\p{N}])", "gu");
+    return new RegExp("(?<![\\p{L}\\p{N}])" + body + "(?![\\p{L}\\p{N}])", "giu");
   } catch (e) {
     // A term the "u" flag rejects shouldn't silently kill every highlight.
-    return new RegExp("(?<![A-Za-z0-9])" + body + "(?![A-Za-z0-9])", "g");
+    return new RegExp("(?<![A-Za-z0-9])" + body + "(?![A-Za-z0-9])", "gi");
   }
 }
 
@@ -547,15 +560,17 @@ function logBuildBanner() {
   let probe = "regex unavailable";
   try {
     const re = buildRegex(["Go"]);
-    const hit = (s) => ((s.match(re) || []).length ? "HIGHLIGHT" : "skip");
-    re.lastIndex = 0;
+    const hit = (s) => {
+      re.lastIndex = 0;
+      return (s.match(re) || []).length ? "HIGHLIGHT" : "skip";
+    };
     probe = `flags=${re.flags} "ArgoCD"=${hit("ArgoCD")} "go"=${hit("go")} "Go,"=${hit("Go,")}`;
   } catch (e) {
     probe = "regex error: " + e.message;
   }
   console.info(
     `[Hide & Highlight] v${chrome.runtime.getManifest().version} · id=${chrome.runtime.id} · ` +
-      `case-sensitive whole-word · ${groups.length} keyword group(s) · self-test: ${probe}`
+      `whole-word, any-case · ${groups.length} keyword group(s) · self-test: ${probe}`
   );
 }
 

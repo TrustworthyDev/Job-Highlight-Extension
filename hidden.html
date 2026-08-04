@@ -120,9 +120,9 @@
           <div>
             <h2>Highlighted words</h2>
             <p class="note">
-              Job cards containing these words get a coloured highlight. Matching is
-              <b>case-sensitive</b> and matches <b>whole words</b> — “Go” is highlighted in
-              “Go, Python”, but not in “ArgoCD”, “Google” or “go”.
+              Job cards containing these words get a coloured highlight. A word is matched in
+              <b>any capitalisation</b>, but only as a <b>whole word</b> — “Go” highlights “Go”,
+              “go” and “GO”, and not the “go” buried inside “ArgoCD” or “Google”.
             </p>
           </div>
           <button id="addBtn" class="btn btn-primary">Add group</button>
@@ -154,11 +154,11 @@
                 <input id="fLabel" type="text" placeholder="e.g. Java" />
               </div>
               <div class="field field-wide">
-                <label for="fTerms">Words to match (comma-separated, case-sensitive)</label>
+                <label for="fTerms">Words to match (comma-separated)</label>
                 <input id="fTerms" type="text" placeholder="e.g. Java, JVM, Spring Boot" />
                 <p class="field-hint">
-                  Whole words only. Type each capitalisation you want to catch, e.g.
-                  <code>Node.js, NodeJS, nodejs</code>.
+                  Whole words, any capitalisation — <code>Go</code> also catches “go” and “GO”.
+                  Add a term per spelling, not per capitalisation: <code>Node.js, NodeJS</code>.
                 </p>
               </div>
               <div class="field field-color">

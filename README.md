@@ -96,11 +96,12 @@ On the settings page's **Keywords** tab:
 - **Add group** creates a keyword group: a label, comma-separated words to match, and a colour.
 - Each row has **pause** (⏸), **edit** (✎), and **delete** (🗑). The filter box narrows the list.
 - Text color (black/white) is auto-chosen for contrast against the background color.
-- **Matching is case-sensitive.** A term is highlighted only where the page uses the same
-  capitalisation you typed — `Java` skips `java`, `GoLang` skips `golang`. List each spelling
-  you want to catch (`Node.js, NodeJS, nodejs`).
+- **Matching ignores case.** `Go` highlights `Go`, `go` and `GO`; `On-Site` also catches
+  LinkedIn's `On-site`. Add a term per *spelling*, not per capitalisation — `Node.js, NodeJS`
+  are two spellings, `nodejs` and `NodeJS` are not.
 - **Matching is whole-word.** A term never matches glued inside a longer word: `Go` is
-  highlighted in `Go, Python` and `(Go)` but not in `ArgoCD`, `Google` or `Mongo`. The edges
+  highlighted in `Go, Python` and `(Go)` but not in `ArgoCD`, `Google` or `Mongo`, and `Java`
+  is not highlighted inside `javascript`. This is what keeps short terms usable. The edges
   are lookarounds (`(?<![\p{L}\p{N}])` … `(?![\p{L}\p{N}])`) rather than `\b`, because `\b` is
   defined against word characters and so breaks on terms that begin or end with punctuation —
   `\b.NET\b` would never match ` .NET ` and `\bC#\b` would never match `C# `.
