@@ -65,10 +65,18 @@ function nativeApply(ops) {
   });
 }
 
+function normCompany(s) {
+  return String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
 function localFile() {
   return new Promise((resolve) => {
-    chrome.storage.local.get({ manualHidden: {}, seenJobs: {} }, (r) => {
-      resolve({ seen: r.seenJobs || {}, hidden: r.manualHidden || {} });
+    chrome.storage.local.get({ manualHidden: {}, seenJobs: {}, blockedCompanies: {} }, (r) => {
+      resolve({
+        seen: r.seenJobs || {},
+        hidden: r.manualHidden || {},
+        companies: r.blockedCompanies || {},
+      });
     });
   });
 }
@@ -77,6 +85,7 @@ function localFile() {
 function applyOps(state, ops) {
   state.seen = state.seen || {};
   state.hidden = state.hidden || {};
+  state.companies = state.companies || {};
   for (const op of ops || []) {
     if (!op || !op.type) continue;
     if (op.type === "seen" && op.sig) state.seen[op.sig] = true;
@@ -85,12 +94,20 @@ function applyOps(state, ops) {
     else if (op.type === "unhide" && op.sig) delete state.hidden[op.sig];
     else if (op.type === "clearHidden") state.hidden = {};
     else if (op.type === "clearSeen") state.seen = {};
+    else if (op.type === "addCompany" && normCompany(op.name))
+      state.companies[normCompany(op.name)] = String(op.name).trim();
+    else if (op.type === "removeCompany" && op.name)
+      delete state.companies[normCompany(op.name)];
   }
   return state;
 }
 
 function mapToExt(file) {
-  return { manualHidden: file.hidden || {}, seenJobs: file.seen || {} };
+  return {
+    manualHidden: file.hidden || {},
+    seenJobs: file.seen || {},
+    blockedCompanies: file.companies || {},
+  };
 }
 
 /** Source of truth = the shared file; fall back to per-profile local. */

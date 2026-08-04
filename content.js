@@ -23,8 +23,9 @@ let hideViewedEnabled = true;
 let highlightEnabled = true;
 let manualHideEnabled = true;
 let groups = [];
-let manualHidden = {}; // { [sig]: record }     hidden cards
-let seenJobs = {}; // { [sig]: true }       cards we saw the user click
+let manualHidden = {}; // { [sig]: record }        hidden cards
+let seenJobs = {}; // { [sig]: true }           cards we saw the user click
+let blockedCompanies = {}; // { [normName]: displayName }  hide every card from these companies
 
 const IS_LINKEDIN = /(^|\.)linkedin\.com$/i.test(location.hostname);
 
@@ -155,6 +156,21 @@ function getCardSig(item) {
   return "lk:" + djb2(title + "|" + company);
 }
 
+// Company-block normalization must match the host + popup.
+function normCompany(s) {
+  return String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+/** True if a card's company matches any blocked-company term (substring match). */
+function companyBlocked(companyText) {
+  const c = normCompany(companyText);
+  if (!c) return false;
+  for (const term in blockedCompanies) {
+    if (term && c.includes(term)) return true;
+  }
+  return false;
+}
+
 /* ============================ generic cards ============================= */
 
 const GENERIC_CARD_SELECTOR = "article, li, [role='listitem'], [role='article']";
@@ -250,7 +266,11 @@ function reconcile() {
       const sig = getCardSig(item);
       const viewed = isViewed(item) || (sig && seenJobs[sig]);
       item.classList.toggle(VIEWED_CLASS, hideViewedEnabled && Boolean(viewed));
-      item.classList.toggle(REMOVED_CLASS, manualHideEnabled && Boolean(sig && manualHidden[sig]));
+      // Per-card hides follow the Hide-button toggle; company blocks are an
+      // explicit rule, so they apply whenever the extension is on.
+      const hideByCard = manualHideEnabled && sig && manualHidden[sig];
+      const hide = hideByCard || companyBlocked(getCompanyText(item));
+      item.classList.toggle(REMOVED_CLASS, Boolean(hide));
     }
   } else {
     document.querySelectorAll(GENERIC_CARD_SELECTOR).forEach((card) => {
@@ -478,6 +498,7 @@ function requestSync() {
     if (!chrome.runtime.lastError && state) {
       manualHidden = state.manualHidden || {};
       seenJobs = state.seenJobs || {};
+      blockedCompanies = state.blockedCompanies || {};
       reconcile();
     }
   });
@@ -532,14 +553,19 @@ function init() {
         if (!chrome.runtime.lastError && state) {
           manualHidden = state.manualHidden || {};
           seenJobs = state.seenJobs || {};
+          blockedCompanies = state.blockedCompanies || {};
           startPage();
         } else {
           // Background unavailable — fall back to this profile's local cache.
-          chrome.storage.local.get({ manualHidden: {}, seenJobs: {} }, (loc) => {
-            manualHidden = loc.manualHidden || {};
-            seenJobs = loc.seenJobs || {};
-            startPage();
-          });
+          chrome.storage.local.get(
+            { manualHidden: {}, seenJobs: {}, blockedCompanies: {} },
+            (loc) => {
+              manualHidden = loc.manualHidden || {};
+              seenJobs = loc.seenJobs || {};
+              blockedCompanies = loc.blockedCompanies || {};
+              startPage();
+            }
+          );
         }
       });
     }
@@ -563,7 +589,8 @@ function init() {
     } else if (area === "local") {
       if (changes.manualHidden) manualHidden = changes.manualHidden.newValue || {};
       if (changes.seenJobs) seenJobs = changes.seenJobs.newValue || {};
-      if (changes.manualHidden || changes.seenJobs) reconcile();
+      if (changes.blockedCompanies) blockedCompanies = changes.blockedCompanies.newValue || {};
+      if (changes.manualHidden || changes.seenJobs || changes.blockedCompanies) reconcile();
     }
   });
 }

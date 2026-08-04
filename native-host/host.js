@@ -16,11 +16,13 @@
  * "apply" MERGES the given delta ops into whatever is currently on disk (read ->
  * apply -> write), so a profile only ever adds/removes the specific items it
  * touched and never overwrites another profile's data. Each op:
- *   { type:"seen",   sig }            mark a card clicked/viewed
- *   { type:"hide",   sig, record }    hide a card
- *   { type:"unhide", sig }            restore a hidden card
- *   { type:"unsee",  sig }            forget a clicked card
- *   { type:"clearHidden" }            restore all hidden cards
+ *   { type:"seen",   sig }             mark a card clicked/viewed
+ *   { type:"hide",   sig, record }     hide a card
+ *   { type:"unhide", sig }             restore a hidden card
+ *   { type:"unsee",  sig }             forget a clicked card
+ *   { type:"clearHidden" }             restore all hidden cards
+ *   { type:"addCompany",    name }     hide all cards from this company
+ *   { type:"removeCompany", name }     stop blocking a company
  *
  * Everything lives in ONE file: shared-state.json. We write it directly (no temp
  * file) so the single file is always the latest data.
@@ -31,17 +33,26 @@ const path = require("path");
 
 const FILE = path.join(__dirname, "shared-state.json");
 
+// Company key normalization must match the extension's (content.js / popup.js).
+function normCompany(s) {
+  return String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
 function readState() {
   try {
     const obj = JSON.parse(fs.readFileSync(FILE, "utf8"));
-    return { seen: obj.seen || {}, hidden: obj.hidden || {} };
+    return { seen: obj.seen || {}, hidden: obj.hidden || {}, companies: obj.companies || {} };
   } catch (e) {
-    return { seen: {}, hidden: {} };
+    return { seen: {}, hidden: {}, companies: {} };
   }
 }
 
 function writeState(state) {
-  const clean = { seen: state.seen || {}, hidden: state.hidden || {} };
+  const clean = {
+    seen: state.seen || {},
+    hidden: state.hidden || {},
+    companies: state.companies || {},
+  };
   fs.writeFileSync(FILE, JSON.stringify(clean, null, 2));
 }
 
@@ -56,6 +67,7 @@ function send(msg) {
 function applyOps(state, ops) {
   state.seen = state.seen || {};
   state.hidden = state.hidden || {};
+  state.companies = state.companies || {};
   for (const op of ops || []) {
     if (!op || !op.type) continue;
     if (op.type === "seen" && op.sig) state.seen[op.sig] = true;
@@ -64,6 +76,10 @@ function applyOps(state, ops) {
     else if (op.type === "unhide" && op.sig) delete state.hidden[op.sig];
     else if (op.type === "clearHidden") state.hidden = {};
     else if (op.type === "clearSeen") state.seen = {};
+    else if (op.type === "addCompany" && normCompany(op.name))
+      state.companies[normCompany(op.name)] = String(op.name).trim();
+    else if (op.type === "removeCompany" && op.name)
+      delete state.companies[normCompany(op.name)];
   }
   return state;
 }

@@ -240,6 +240,53 @@ function copySetupCommand() {
   );
 }
 
+/* ---- hide by company (blocked-company list, shared via the bridge) ---- */
+let blockedCompanies = {}; // { [normName]: displayName }
+
+function renderCompanies() {
+  const list = $("companyList");
+  list.innerHTML = "";
+  const keys = Object.keys(blockedCompanies).sort((a, b) =>
+    (blockedCompanies[a] || a).localeCompare(blockedCompanies[b] || b)
+  );
+  $("companyEmpty").hidden = keys.length !== 0;
+  for (const key of keys) {
+    const li = document.createElement("li");
+    li.className = "item";
+    const text = document.createElement("div");
+    text.className = "item-text";
+    const label = document.createElement("div");
+    label.className = "item-label";
+    label.textContent = blockedCompanies[key] || key;
+    text.appendChild(label);
+    const del = iconBtn("🗑", "Unblock", () => companyOp({ type: "removeCompany", name: key }));
+    li.append(text, del);
+    list.appendChild(li);
+  }
+}
+
+function companyOp(op) {
+  chrome.runtime.sendMessage({ type: "lhvj-apply", ops: [op] }, (resp) => {
+    if (!chrome.runtime.lastError && resp && resp.state) {
+      blockedCompanies = resp.state.blockedCompanies || {};
+      renderCompanies();
+    }
+  });
+}
+
+function addCompany() {
+  const name = $("companyInput").value.trim();
+  $("companyInput").value = "";
+  if (name) companyOp({ type: "addCompany", name });
+}
+
+function loadCompanies() {
+  chrome.runtime.sendMessage({ type: "lhvj-load" }, (state) => {
+    blockedCompanies = (!chrome.runtime.lastError && state && state.blockedCompanies) || {};
+    renderCompanies();
+  });
+}
+
 /* ---- init ---- */
 async function loadDefaults() {
   try {
@@ -312,10 +359,20 @@ function init() {
 
   $("viewHidden").addEventListener("click", openHiddenPage);
   $("copySetup").addEventListener("click", copySetupCommand);
+  $("companyAdd").addEventListener("click", addCompany);
+  $("companyInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") addCompany();
+  });
   refreshHiddenCount();
   refreshSyncStatus();
+  loadCompanies();
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === "local" && changes.manualHidden) refreshHiddenCount();
+    if (area !== "local") return;
+    if (changes.manualHidden) refreshHiddenCount();
+    if (changes.blockedCompanies) {
+      blockedCompanies = changes.blockedCompanies.newValue || {};
+      renderCompanies();
+    }
   });
 }
 

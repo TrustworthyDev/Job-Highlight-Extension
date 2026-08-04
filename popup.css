@@ -259,6 +259,17 @@ input:checked + .slider::before {
   padding: 8px 10px;
 }
 
+/* ---- hide by company ---- */
+.company-add {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.company-add .filter {
+  flex: 1;
+  margin: 0;
+}
+
 /* ---- profile sync ---- */
 .sync {
   margin-top: 10px;

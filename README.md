@@ -6,6 +6,11 @@ A Chrome extension that runs on **every site**:
    at its top-right; clicking it **removes the card from view**. Hidden cards are saved
    automatically and **stay hidden across reloads**. Open the **Hidden jobs** page from the
    popup to review and restore them.
+
+   **Hide by company (LinkedIn)** — in the popup's **Hide by company** box, type a company
+   name and every job card from that company is hidden (case-insensitive, matches company
+   names containing the text). Remove a name from the list to unblock it. The list is shared
+   across profiles the same way hidden jobs are.
 2. **Keyword highlighter (all sites)** — color your chosen words (languages, "Easy Apply",
    etc.) anywhere on the page. Matches are shown **bold on a colored background** so they
    stand out, managed from the toolbar popup. (The no-DOM highlight technique can't change

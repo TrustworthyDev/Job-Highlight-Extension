@@ -68,6 +68,18 @@
     </section>
 
     <section class="groups">
+      <div class="groups-head">
+        <span class="caption">Hide by company</span>
+      </div>
+      <div class="company-add">
+        <input id="companyInput" class="filter" type="text" placeholder="Company name to hide…" />
+        <button id="companyAdd" class="add-btn" title="Hide all jobs from this company">+</button>
+      </div>
+      <ul id="companyList" class="list"></ul>
+      <p id="companyEmpty" class="empty" hidden>No companies blocked. Add one above.</p>
+    </section>
+
+    <section class="groups">
       <button id="viewHidden" class="ghost wide">
         View hidden jobs (<span id="hiddenCount">0</span>)
       </button>
